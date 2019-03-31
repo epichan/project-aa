@@ -17,7 +17,8 @@
     "url": "https://github.com/epichan/project-aa/issues"
   },
   "homepage": "https://github.com/epichan/project-aa#readme",
-  "dependencies": {
-    "jquery": "^3.3.1"
+  "dependencies": {},
+  "devDependencies": {
+    "semistandard": "13.0.1"
   }
 }
