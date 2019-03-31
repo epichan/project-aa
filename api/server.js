@@ -1,20 +1,20 @@
+'use strict';
+
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
 
-const port = process.env.NODE_ENV || 8080;
+const port = process.env.PORT || 8080;
 
 http.createServer(function (req, res) {
   console.log(`${req.method} ${req.url}`);
 
-  // parse URL
+  // Parse URL.
   const parsedUrl = url.parse(req.url);
-  // extract URL path
+  // Extract URL path.
   let pathname = path.join(__dirname, '../public', `.${parsedUrl.pathname}`);
-  // based on the URL path, extract the file extention. e.g. .js, .doc, ...
-  const ext = path.parse(pathname).ext || '.html';
-  // maps file extention to MIME typere
+  // Maps file extention to MIME type.
   const map = {
     '.ico': 'image/x-icon',
     '.html': 'text/html',
@@ -27,35 +27,42 @@ http.createServer(function (req, res) {
     '.mp3': 'audio/mpeg',
     '.svg': 'image/svg+xml',
     '.pdf': 'application/pdf',
-    '.doc': 'application/msword'
+    '.doc': 'application/msword',
+    '': 'text/plain' // Default MIME type, for errors.
   };
 
   fs.exists(pathname, function (exist) {
     if(!exist) {
-      // if the file is not found, return 404
+      // If the file is not found, return 404.
       res.statusCode = 404;
+      res.setHeader('Content-type', map[''] );
       res.end(`File ${pathname} not found!`);
       return;
     }
 
-    // if is a directory search for index file matching the extention
+    // If is a directory search for index HTML file.
     if (fs.statSync(pathname).isDirectory()) {
-      pathname = path.join(pathname, `index${ext}`);
+      pathname = path.join(pathname, 'index.html');
     }
 
-    // read file from file system
+    // Read file from file system.
     fs.readFile(pathname, function(err, data) {
       if(err){
         if (err.code === 'ENOENT') {
           res.statusCode = 404;
+          res.setHeader('Content-type', map[''] );
           res.end(`File ${pathname} not found!`);
         } else {
           res.statusCode = 500;
+          res.setHeader('Content-type', map[''] );
           res.end(`Error getting the file: ${err}.`);
         }
       } else {
-        // if the file is found, set Content-type and send data
-        res.setHeader('Content-type', map[ext] || 'text/plain' );
+        // Based on the URL path, extract the file extention. e.g. .js, .doc, ...
+        const ext = path.parse(pathname).ext;
+
+        // If the file is found, set Content-type and send data.
+        res.setHeader('Content-type', map[ext] );
         res.end(data);
       }
     });
