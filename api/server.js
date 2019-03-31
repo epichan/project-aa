@@ -7,13 +7,13 @@ const path = require('path');
 
 const port = process.env.PORT || 8080;
 
-http.createServer(function (req, res) {
-  console.log(`${req.method} ${req.url}`);
+const sendResponse = (res, statusCode, data, mimeType) => {
+  res.statusCode = statusCode;
+  res.setHeader('Content-type', mimeType);
+  res.end(data);
+};
 
-  // Parse URL.
-  const parsedUrl = url.parse(req.url);
-  // Extract URL path.
-  let pathname = path.join(__dirname, '../public', `.${parsedUrl.pathname}`);
+const getMimeType = (ext) => {
   // Maps file extention to MIME type.
   const map = {
     '.ico': 'image/x-icon',
@@ -27,46 +27,70 @@ http.createServer(function (req, res) {
     '.mp3': 'audio/mpeg',
     '.svg': 'image/svg+xml',
     '.pdf': 'application/pdf',
-    '.doc': 'application/msword',
-    '': 'text/plain' // Default MIME type, for errors.
+    '.doc': 'application/msword'
   };
 
-  fs.exists(pathname, function (exist) {
-    if(!exist) {
-      // If the file is not found, return 404.
-      res.statusCode = 404;
-      res.setHeader('Content-type', map[''] );
-      res.end(`File ${pathname} not found!`);
-      return;
+  return map[ext] || 'text/plain';
+};
+
+const errorHandler = (res, err) => {
+  // sendResponse(res, 500, `Error getting the file: ${err}.`, getMimeType())
+  // sendResponse(res, 404, `File ${pathname} not found!`, getMimeType());
+  if (err.code === 'ENOENT') {
+    return sendResponse(res, 404, `File ${err.path} not found!`, getMimeType());
+  } else {
+    return sendResponse(res, 500, `Error getting the file: ${err.message}.`, getMimeType());
+  }
+};
+
+const sendFile = (res, pathname) => {
+  // Read file from file system.
+  fs.readFile(pathname, (err, data) => {
+    if (err) {
+      return errorHandler(res, err);
     }
 
-    // If is a directory search for index HTML file.
-    if (fs.statSync(pathname).isDirectory()) {
-      pathname = path.join(pathname, 'index.html');
-    }
+    // Based on the URL path, extract the file extention. e.g. .js, .doc, ...
+    const ext = path.parse(pathname).ext;
 
-    // Read file from file system.
-    fs.readFile(pathname, function(err, data) {
-      if(err){
-        if (err.code === 'ENOENT') {
-          res.statusCode = 404;
-          res.setHeader('Content-type', map[''] );
-          res.end(`File ${pathname} not found!`);
-        } else {
-          res.statusCode = 500;
-          res.setHeader('Content-type', map[''] );
-          res.end(`Error getting the file: ${err}.`);
-        }
-      } else {
-        // Based on the URL path, extract the file extention. e.g. .js, .doc, ...
-        const ext = path.parse(pathname).ext;
-
-        // If the file is found, set Content-type and send data.
-        res.setHeader('Content-type', map[ext] );
-        res.end(data);
-      }
-    });
+    // If the file is found, set Content-type and send data.
+    return sendResponse(res, 200, data, getMimeType(ext));
   });
-}).listen(parseInt(port));
+};
+
+const requestListener = (req, res) => {
+  console.log(`${req.method} ${req.url}`);
+
+  // Parse URL.
+  const parsedUrl = url.parse(req.url);
+  // Extract URL path.
+  let pathname = path.join(__dirname, '../public', `.${parsedUrl.pathname}`);
+
+  fs.stat(pathname, (err, stats) => {
+    if (err) {
+      return errorHandler(res, err);
+    }
+
+    if (stats.isDirectory()) {
+      // If is a directory search for index HTML file.
+      pathname = path.join(pathname, 'index.html');
+
+      fs.stat(pathname, (err, stats) => {
+        if (err) {
+          return errorHandler(res, err);
+        }
+
+        return sendFile(res, pathname);
+      });
+    } else {
+      // If it is not directory, it is a file, just send it.
+      return sendFile(res, pathname);
+    }
+  });
+};
+
+http
+  .createServer(requestListener)
+  .listen(parseInt(port));
 
 console.log(`Server listening on http://localhost:${port}/`);
