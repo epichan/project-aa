@@ -1,17 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style type = "text/css">  
-    .login {
-      text-align: left;
-      list-style-type:none;
-}
-
-    .signup {
-      text-align: right;
-      list-style-type:none;
-}
-      </style>
+      <script src="buttonalert.js"></script>
+      <link rel = "stylesheet" href = "style.css">
+    <style type = "text/css"></style>
   <body>
     <div class = "login">
         <li><label for = "uname"><b>Username</b></label></li>
@@ -22,7 +14,7 @@
           
         
         <li><label><input type = "checkbox" checked = "checked" name = "remember"> Remember me</label></li>
-        <li><button type="submit">Login</button></li>
+        <li><button onclick = "getAlert()">Login</button></li>
      </div>
      <div class = "signup">
       <li><label for = "email"><b>E-mail</b></label></li>
@@ -33,7 +25,7 @@
       <li><label for = "psw"><b>Confirm password</b></label></li>
       <li><input type = "password" placeholder = "Confirm Password" name = "psw" required></li>
     
-      <li><button type = "submit">Sign up</button></li>
+      <li><button onclick = "getAlert()">Sign up</button></li>
    </div>
   </body>
 </html>
