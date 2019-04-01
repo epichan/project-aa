@@ -1,6 +1,11 @@
 'use strict';
 
 const app = require('./http-server')();
+const serveStatic = require('./middlewares/serve-static');
+const bodyParser = require('./middlewares/body-parser');
+
+app.use(serveStatic('public/'));
+app.use(bodyParser());
 
 app.use((ctx) => {
   const statusCode = 404;
