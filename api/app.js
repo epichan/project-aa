@@ -7,6 +7,9 @@ const bodyParser = require('./middlewares/body-parser');
 app.use(serveStatic('public/'));
 app.use(bodyParser());
 
+// Configure API endpoints.
+require('./routes')(app);
+
 app.use((req, res) => {
   const statusCode = 404;
   const data = {
