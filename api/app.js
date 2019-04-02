@@ -3,7 +3,9 @@
 const app = require('./http-server')();
 const serveStatic = require('./middlewares/serve-static');
 const bodyParser = require('./middlewares/body-parser');
+const logger = require('./middlewares/logger');
 
+app.use(logger());
 app.use(serveStatic('public/'));
 app.use(bodyParser());
 
