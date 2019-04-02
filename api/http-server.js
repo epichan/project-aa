@@ -4,25 +4,20 @@ const http = require('http');
 
 const middlewares = [];
 
-const callMiddlewares = (ctx, middlewares) => {
-  if (ctx.res.finished || ctx.req.finished) {
+const callMiddlewares = (req, res, middlewares) => {
+  if (res.finished || req.finished) {
     return;
   }
 
   if (!middlewares.length) {
-    return ctx.res.end();
+    return res.end();
   }
 
-  return middlewares[0](ctx, callMiddlewares.bind(null, ctx, middlewares.slice(1)));
+  return middlewares[0](req, res, callMiddlewares.bind(null, req, res, middlewares.slice(1)));
 };
 
 const requestListener = (req, res) => {
-  const ctx = {
-    req,
-    res
-  };
-
-  return callMiddlewares(ctx, middlewares);
+  return callMiddlewares(req, res, middlewares);
 };
 
 module.exports = function httpServer () {

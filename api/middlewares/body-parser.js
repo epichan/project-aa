@@ -5,22 +5,22 @@ const url = require('url');
 module.exports = function bodyParser () {
   const methods = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-  return (ctx, next) => {
-    ctx.query = url.parse(ctx.req.url, true).query;
+  return (req, res, next) => {
+    req.query = url.parse(req.url, true).query;
 
-    if (methods.includes(ctx.req.method)) {
+    if (methods.includes(req.method)) {
       const data = [];
 
-      ctx.req.on('data', chunk => {
+      req.on('data', chunk => {
         // TODO: Validate a payload limit.
         data.push(chunk);
       });
 
-      ctx.req.on('end', () => {
+      req.on('end', () => {
         if (data.length) {
-          ctx.body = JSON.parse(data);
+          req.body = JSON.parse(data);
         } else {
-          ctx.body = {};
+          req.body = {};
         }
 
         return next();

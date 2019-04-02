@@ -4,10 +4,10 @@ const url = require('url');
 const fs = require('fs');
 const path = require('path');
 
-const sendResponse = (ctx, statusCode, data, mimeType) => {
-  ctx.res.statusCode = statusCode;
-  ctx.res.setHeader('Content-type', mimeType);
-  ctx.res.end(data);
+const sendResponse = (req, res, statusCode, data, mimeType) => {
+  res.statusCode = statusCode;
+  res.setHeader('Content-type', mimeType);
+  res.end(data);
 };
 
 const getMimeType = (ext) => {
@@ -30,47 +30,47 @@ const getMimeType = (ext) => {
   return map[ext] || 'text/plain';
 };
 
-const errorHandler = (ctx, err, next) => {
+const errorHandler = (req, res, err, next) => {
   if (err.code === 'ENOENT') {
     if (next) {
       return next();
     } else {
-      return sendResponse(ctx, 404, `File ${err.path} not found!`, getMimeType());
+      return sendResponse(req, res, 404, `File ${err.path} not found!`, getMimeType());
     }
   } else {
-    return sendResponse(ctx, 500, `Error getting the file: ${err.message}.`, getMimeType());
+    return sendResponse(req, res, 500, `Error getting the file: ${err.message}.`, getMimeType());
   }
 };
 
-const sendFile = (ctx, pathname) => {
+const sendFile = (req, res, pathname) => {
   // Read file from file system.
   fs.readFile(pathname, (err, data) => {
     if (err) {
-      return errorHandler(ctx, err, null);
+      return errorHandler(req, res, err, null);
     }
 
     // Based on the URL path, extract the file extention. e.g. .js, .doc, ...
     const ext = path.parse(pathname).ext;
 
     // If the file is found, set Content-type and send data.
-    return sendResponse(ctx, 200, data, getMimeType(ext));
+    return sendResponse(req, res, 200, data, getMimeType(ext));
   });
 };
 
 module.exports = function serveStatic (root) {
-  return (ctx, next) => {
-    if (ctx.req.method !== 'GET') {
+  return (req, res, next) => {
+    if (req.method !== 'GET') {
       return next();
     }
 
     // Parse URL.
-    const parsedUrl = url.parse(ctx.req.url);
+    const parsedUrl = url.parse(req.url);
     // Extract URL path.
     let pathname = path.resolve(root, `.${parsedUrl.pathname}`);
 
     fs.stat(pathname, (err, stats) => {
       if (err) {
-        return errorHandler(ctx, err, next);
+        return errorHandler(req, res, err, next);
       }
 
       if (stats.isDirectory()) {
@@ -79,14 +79,14 @@ module.exports = function serveStatic (root) {
 
         fs.stat(pathname, (err, stats) => {
           if (err) {
-            return errorHandler(ctx, err, next);
+            return errorHandler(req, res, err, next);
           }
 
-          return sendFile(ctx, pathname);
+          return sendFile(req, res, pathname);
         });
       } else {
         // If it is not directory, it is a file, just send it.
-        return sendFile(ctx, pathname);
+        return sendFile(req, res, pathname);
       }
     });
   };
