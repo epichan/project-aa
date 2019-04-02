@@ -63,8 +63,6 @@ module.exports = function serveStatic (root) {
       return next();
     }
 
-    console.log(`${ctx.req.method} ${ctx.req.url}`);
-
     // Parse URL.
     const parsedUrl = url.parse(ctx.req.url);
     // Extract URL path.
