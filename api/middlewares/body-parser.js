@@ -1,9 +1,13 @@
 'use strict';
 
+const url = require('url');
+
 module.exports = function bodyParser () {
   const methods = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
   return (ctx, next) => {
+    ctx.query = url.parse(ctx.req.url, true).query;
+
     if (methods.includes(ctx.req.method)) {
       const data = [];
 
@@ -14,12 +18,12 @@ module.exports = function bodyParser () {
 
       ctx.req.on('end', () => {
         if (data.length) {
-          ctx.req.body = JSON.parse(data);
+          ctx.body = JSON.parse(data);
         } else {
-          ctx.req.body = {};
+          ctx.body = {};
         }
 
-        next();
+        return next();
       });
     } else {
       return next();
